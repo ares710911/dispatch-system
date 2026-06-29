@@ -570,6 +570,16 @@ function performQuery() {
 
             resultsBody.innerHTML = '';
             records.forEach(r => {
+                const formatTimeLocal = (str) => {
+                    if (!str) return '';
+                    // 匹配時間部分，如 1899-12-30T08:00:00 提取出 08:00
+                    const match = String(str).match(/(?:^|\s|[T])([0-9]{1,2})[:：]([0-9]{2})/);
+                    if (match) {
+                        return `${match[1].padStart(2, '0')}:${match[2]}`;
+                    }
+                    return String(str).trim();
+                };
+
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${r.date || ''}</td>
@@ -580,8 +590,8 @@ function performQuery() {
                     <td>${r.process || ''}</td>
                     <td>${r.productionOrder || ''}</td>
                     <td>${r.productionQty || ''}</td>
-                    <td>${r.startTime || ''}</td>
-                    <td>${r.endTime || ''}</td>
+                    <td>${formatTimeLocal(r.startTime)}</td>
+                    <td>${formatTimeLocal(r.endTime)}</td>
                     <td style="color: var(--danger); font-weight: bold;">${r.inputDuration || ''}</td>
                     <td>${r.estQty || ''}</td>
                     <td>${r.estHours || ''}</td>
