@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生產派工管理系統</title>
+    <link rel="stylesheet" href="dispatch_style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Mobile Header -->
+    <header class="mobile-header">
+        <button id="menuToggleBtn" class="menu-toggle-btn">☰</button>
+        <span id="mobileTitle" class="mobile-title">派工登錄</span>
+    </header>
+
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <span class="logo-icon">🛠️</span>
+                <div class="logo-text">
+                    <h2>派工管理系統</h2>
+                    <p>Dispatch Work System</p>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li>
+                        <a href="#" class="nav-item active" data-target="dispatchFormSection">
+                            <span class="icon">📝</span>
+                            <span class="text">派工登錄</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="nav-item" data-target="dispatchQuerySection">
+                            <span class="icon">🔍</span>
+                            <span class="text">資訊查詢</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Sidebar Mobile Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- ==================== 派工登錄頁面 ==================== -->
+            <section id="dispatchFormSection" class="content-section">
+                <div class="section-header">
+                    <h1 id="formTitle">生產派工登錄</h1>
+                    <p id="formSubTitle">填寫每日生產人員之指派工序與排程數量</p>
+                </div>
+
+                <div class="card">
+                    <form id="dispatchForm">
+                        <!-- Hidden RowIndex for Editing -->
+                        <input type="hidden" id="rowIndex" name="rowIndex">
+
+                        <div class="form-grid">
+                            <!-- 日期 -->
+                            <div class="form-group">
+                                <label for="date">派工日期</label>
+                                <input type="date" id="date" name="date" required>
+                            </div>
+
+                            <!-- 人員 (Part M2:M7) -->
+                            <div class="form-group">
+                                <label for="personnel">人員</label>
+                                <select id="personnel" name="personnel" required>
+                                    <option value="" disabled selected>資料載入中...</option>
+                                </select>
+                            </div>
+
+                            <!-- 類別 (Part I2:I14) -->
+                            <div class="form-group">
+                                <label for="category">類別</label>
+                                <select id="category" name="category" required>
+                                    <option value="" disabled selected>資料載入中...</option>
+                                </select>
+                            </div>
+
+                            <!-- 機型類別 (工序Data B欄) -->
+                            <div class="form-group">
+                                <label for="modelCategory">機型類別</label>
+                                <select id="modelCategory" name="modelCategory" required disabled>
+                                    <option value="" disabled selected>請選擇機型類別</option>
+                                </select>
+                            </div>
+
+                            <!-- 機型 (工序Data C欄, 對應機型類別) -->
+                            <div class="form-group">
+                                <label for="model">機型</label>
+                                <select id="model" name="model" required disabled>
+                                    <option value="" disabled selected>請先選擇機型類別</option>
+                                </select>
+                            </div>
+
+                            <!-- 工序 (工序Data D欄, 對應機型) -->
+                            <div class="form-group">
+                                <label for="process">工序</label>
+                                <select id="process" name="process" required disabled>
+                                    <option value="" disabled selected>請先選擇機型</option>
+                                </select>
+                            </div>
+
+                            <!-- 生產製令 (Model B欄, 對應機型) -->
+                            <div class="form-group">
+                                <label for="productionOrder">生產製令</label>
+                                <select id="productionOrder" name="productionOrder" required disabled>
+                                    <option value="" disabled selected>請先選擇機型</option>
+                                </select>
+                            </div>
+
+                            <!-- 生產數量 (Model D欄, 對應機型) -->
+                            <div class="form-group">
+                                <label for="productionQty">生產數量</label>
+                                <select id="productionQty" name="productionQty" required disabled>
+                                    <option value="" disabled selected>請先選擇機型</option>
+                                </select>
+                            </div>
+
+                            <!-- 起始時間 -->
+                            <div class="form-group">
+                                <label for="startTime">起始時間</label>
+                                <input type="text" id="startTime" name="startTime" required placeholder="請輸入起始時間 (例如 08:00)">
+                            </div>
+
+                            <!-- 結束時間 -->
+                            <div class="form-group">
+                                <label for="endTime">結束時間</label>
+                                <input type="text" id="endTime" name="endTime" required placeholder="請輸入結束時間 (例如 17:30)">
+                            </div>
+
+                            <!-- 預計數量 -->
+                            <div class="form-group">
+                                <label for="estQty">預計數量</label>
+                                <input type="number" id="estQty" name="estQty" required min="1" placeholder="請輸入預計數量">
+                            </div>
+
+                            <!-- 預計工時 -->
+                            <div class="form-group">
+                                <label for="estHours">預計工時 (標準工時 × 預計數量)</label>
+                                <input type="number" id="estHours" name="estHours" readonly step="any" placeholder="自動計算預計工時">
+                            </div>
+
+                            <!-- 實際數量 -->
+                            <div class="form-group">
+                                <label for="actQty">實際數量 (保留欄位)</label>
+                                <input type="number" id="actQty" name="actQty" placeholder="請輸入實際數量">
+                            </div>
+
+                            <!-- 不良數量 -->
+                            <div class="form-group">
+                                <label for="defectQty">不良數量 (保留欄位)</label>
+                                <input type="number" id="defectQty" name="defectQty" placeholder="請輸入不良數量">
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" id="cancelEditBtn" class="btn btn-secondary hidden">取消修改</button>
+                            <button type="submit" id="submitBtn" class="btn btn-primary" disabled>
+                                <span class="btn-text">送出派工紀錄</span>
+                                <div class="spinner hidden" id="submitSpinner"></div>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- ==================== 資訊查詢頁面 ==================== -->
+            <section id="dispatchQuerySection" class="content-section hidden">
+                <div class="section-header">
+                    <h1>派工資訊查詢</h1>
+                    <p>依日期查詢派工登錄明細，並可編輯與列印報表</p>
+                </div>
+
+                <div class="card">
+                    <div class="query-controls">
+                        <div class="form-group">
+                            <label for="queryDate">選擇查詢日期</label>
+                            <input type="date" id="queryDate">
+                        </div>
+                        <button type="button" id="queryBtn" class="btn btn-primary">
+                            <span>查詢</span>
+                            <div class="spinner hidden" id="querySpinner"></div>
+                        </button>
+                        <button type="button" id="printBtn" class="btn btn-secondary">
+                            <span>🖨️ 列印報表</span>
+                        </button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table id="resultsTable">
+                            <thead>
+                                <tr>
+                                    <th>日期</th>
+                                    <th>人員</th>
+                                    <th>類別</th>
+                                    <th>機型類別</th>
+                                    <th>機型</th>
+                                    <th>工序</th>
+                                    <th>生產製令</th>
+                                    <th>生產數量</th>
+                                    <th>起始</th>
+                                    <th>結束</th>
+                                    <th>預計數量</th>
+                                    <th>預計工時</th>
+                                    <th>實際數量</th>
+                                    <th>不良數量</th>
+                                    <th class="col-actions" style="text-align: right;">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultsBody">
+                                <tr>
+                                    <td colspan="15" class="empty-state">
+                                        <div class="empty-state-icon">📅</div>
+                                        <div>請選擇日期並點擊查詢</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Notification toast -->
+    <div id="toast" class="toast"></div>
+
+    <script src="dispatch.js"></script>
+</body>
+</html>
