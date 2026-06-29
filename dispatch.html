@@ -122,16 +122,22 @@
                                 </select>
                             </div>
 
-                            <!-- 起始時間 -->
-                            <div class="form-group">
-                                <label for="startTime">起始時間</label>
-                                <input type="text" id="startTime" name="startTime" required placeholder="請輸入起始時間 (例如 08:00)">
-                            </div>
-
-                            <!-- 結束時間 -->
-                            <div class="form-group">
-                                <label for="endTime">結束時間</label>
-                                <input type="text" id="endTime" name="endTime" required placeholder="請輸入結束時間 (例如 17:30)">
+                            <!-- 起始時間、結束時間與投入工時 (同一行) -->
+                            <div class="form-group full-width">
+                                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%;">
+                                    <div class="form-group">
+                                        <label for="startTime">起始時間</label>
+                                        <input type="text" id="startTime" name="startTime" required placeholder="請輸入起始時間 (例如 08:00)">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="endTime">結束時間</label>
+                                        <input type="text" id="endTime" name="endTime" required placeholder="請輸入結束時間 (例如 17:30)">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="inputDuration">投入工時 (分鐘)</label>
+                                        <input type="text" id="inputDuration" name="inputDuration" readonly placeholder="自動計算" style="color: var(--danger); font-weight: bold; border-color: var(--danger); background-color: #fff5f5;">
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- 預計數量 -->
@@ -206,6 +212,7 @@
                                     <th>生產數量</th>
                                     <th>起始</th>
                                     <th>結束</th>
+                                    <th style="color: var(--danger); font-weight: bold;">投入時間</th>
                                     <th>預計數量</th>
                                     <th>預計工時</th>
                                     <th>實際數量</th>
@@ -215,7 +222,7 @@
                             </thead>
                             <tbody id="resultsBody">
                                 <tr>
-                                    <td colspan="15" class="empty-state">
+                                    <td colspan="16" class="empty-state">
                                         <div class="empty-state-icon">📅</div>
                                         <div>請選擇日期並點擊查詢</div>
                                     </td>

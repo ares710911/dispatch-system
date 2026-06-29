@@ -324,6 +324,13 @@ function initFormChangeListeners() {
     estQtyInput.addEventListener('input', () => {
         recalculateEstHours();
     });
+
+    // 5. 起始時間 / 結束時間變更 -> 計算投入工時
+    const startTimeInput = document.getElementById('startTime');
+    const endTimeInput = document.getElementById('endTime');
+    
+    startTimeInput.addEventListener('input', recalculateDuration);
+    endTimeInput.addEventListener('input', recalculateDuration);
 }
 
 /**
@@ -356,6 +363,68 @@ function recalculateEstHours() {
         estHoursInput.value = 0;
         console.warn(`未找到對應的標準工時設定：機型類別=${modelCategory}, 工序=${process}`);
     }
+}
+
+/**
+ * 計算投入工時，扣除 10:00~10:10、12:00~13:00、15:30~15:40 三個休息時段
+ */
+function recalculateDuration() {
+    const startTime = document.getElementById('startTime').value;
+    const endTime = document.getElementById('endTime').value;
+    const durationInput = document.getElementById('inputDuration');
+
+    if (!startTime || !endTime) {
+        durationInput.value = '';
+        return;
+    }
+
+    const timeToMinutes = (timeStr) => {
+        if (!timeStr) return null;
+        // 匹配 HH:MM 或 H:MM，相容半形與全形冒號，也可以包含日期尾碼
+        const match = timeStr.trim().match(/(?:^|\s)([0-9]{1,2})[:：]([0-9]{2})/);
+        if (match) {
+            const hours = parseInt(match[1], 10);
+            const minutes = parseInt(match[2], 10);
+            return hours * 60 + minutes;
+        }
+        return null;
+    };
+
+    const startMins = timeToMinutes(startTime);
+    let endMins = timeToMinutes(endTime);
+
+    if (startMins === null || endMins === null) {
+        durationInput.value = '';
+        return;
+    }
+
+    // 跨日處理 (若結束時間小於起始時間，表示跨日，加一天 1440 分鐘)
+    if (endMins < startMins) {
+        endMins += 1440;
+    }
+
+    // 定義扣除時段 (以自午夜起算的分鐘數表示)
+    const breaks = [
+        { start: 10 * 60, end: 10 * 60 + 10 },       // 10:00 ~ 10:10 (10分鐘)
+        { start: 12 * 60, end: 13 * 60 },            // 12:00 ~ 13:00 (60分鐘)
+        { start: 15 * 60 + 30, end: 15 * 60 + 40 }   // 15:30 ~ 15:40 (10分鐘)
+    ];
+
+    let totalOverlap = 0;
+    breaks.forEach(b => {
+        // 第一天
+        const overlap1 = Math.max(0, Math.min(endMins, b.end) - Math.max(startMins, b.start));
+        totalOverlap += overlap1;
+
+        // 第二天 (加 1440 分鐘)
+        const bStart2 = b.start + 1440;
+        const bEnd2 = b.end + 1440;
+        const overlap2 = Math.max(0, Math.min(endMins, bEnd2) - Math.max(startMins, bStart2));
+        totalOverlap += overlap2;
+    });
+
+    const netMinutes = (endMins - startMins) - totalOverlap;
+    durationInput.value = Math.max(0, netMinutes) + ' 分鐘';
 }
 
 /**
@@ -470,7 +539,7 @@ function performQuery() {
     querySpinner.classList.remove('hidden');
     resultsBody.innerHTML = `
         <tr>
-            <td colspan="15" class="empty-state">
+            <td colspan="16" class="empty-state">
                 <div class="spinner"></div>
                 <div style="margin-top: 12px;">查詢中...</div>
             </td>
@@ -490,7 +559,7 @@ function performQuery() {
             if (records.length === 0) {
                 resultsBody.innerHTML = `
                     <tr>
-                        <td colspan="15" class="empty-state">
+                        <td colspan="16" class="empty-state">
                             <div class="empty-state-icon">📭</div>
                             <div>此日期無任何派工紀錄</div>
                         </td>
@@ -513,6 +582,7 @@ function performQuery() {
                     <td>${r.productionQty || ''}</td>
                     <td>${r.startTime || ''}</td>
                     <td>${r.endTime || ''}</td>
+                    <td style="color: var(--danger); font-weight: bold;">${r.inputDuration || ''}</td>
                     <td>${r.estQty || ''}</td>
                     <td>${r.estHours || ''}</td>
                     <td>${r.actQty || ''}</td>
@@ -653,6 +723,7 @@ function enterEditMode(r) {
     // D. 填充剩餘的手動輸入欄位
     document.getElementById('startTime').value = r.startTime || '';
     document.getElementById('endTime').value = r.endTime || '';
+    document.getElementById('inputDuration').value = r.inputDuration || '';
     document.getElementById('estQty').value = r.estQty || '';
     document.getElementById('estHours').value = r.estHours || '';
     document.getElementById('actQty').value = r.actQty || '';
@@ -671,8 +742,9 @@ function resetForm() {
     // 恢復日期為今天
     document.getElementById('date').value = new Date().toISOString().split('T')[0];
 
-    // 清除隱藏的 rowIndex
+    // 清除隱藏的 rowIndex 及投入工時
     document.getElementById('rowIndex').value = '';
+    document.getElementById('inputDuration').value = '';
 
     // 下置下拉選單為唯讀/停用，直到上游被選取
     document.getElementById('model').innerHTML = '<option value="" disabled selected>請先選擇機型類別</option>';
