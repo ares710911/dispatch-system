@@ -423,6 +423,10 @@ tr:hover td {
 
 /* --- Print Styles --- */
 @media print {
+    @page {
+        size: A4 landscape; /* 搶制橫向列印 */
+        margin: 5mm;        /* 縮小邊距以獲得最大寬度 */
+    }
     body {
         background: #ffffff !important;
         color: #000000 !important;
@@ -442,21 +446,26 @@ tr:hover td {
         margin: 0 !important;
     }
     .section-header h1 {
-        font-size: 1.5rem !important;
+        font-size: 1.3rem !important;
         text-align: center;
-        margin-bottom: 20px;
+        margin-bottom: 10px;
     }
     .table-responsive {
         border: none !important;
+        overflow: visible !important;
+        width: 100% !important;
     }
     table {
-        font-size: 0.75rem !important;
+        font-size: 9px !important; /* 縮小字型以完整容納 15 欄 */
+        width: 100% !important;
+        border-collapse: collapse !important;
         border: 1px solid #000000 !important;
     }
     th, td {
-        padding: 8px 10px !important;
+        padding: 4px 6px !important; /* 緊湊間距 */
         border: 1px solid #000000 !important;
         color: #000000 !important;
+        word-break: break-all !important;
     }
     th {
         background-color: #f1f5f9 !important;
