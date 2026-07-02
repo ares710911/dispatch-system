@@ -114,12 +114,10 @@
                                 </select>
                             </div>
 
-                            <!-- 生產數量 (Model D欄, 對應機型) -->
+                            <!-- 生產數量 (Model D欄, 對應生產製令, 唯讀唯一值) -->
                             <div class="form-group">
-                                <label for="productionQty">生產數量</label>
-                                <select id="productionQty" name="productionQty" required disabled>
-                                    <option value="" disabled selected>請先選擇機型</option>
-                                </select>
+                                <label for="productionQty">生產數量 (對應製令)</label>
+                                <input type="text" id="productionQty" name="productionQty" readonly placeholder="自動帶出生產數量">
                             </div>
 
                             <!-- 起始時間、結束時間與投入工時 (同一行) -->

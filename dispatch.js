@@ -227,12 +227,11 @@ function initFormChangeListeners() {
         modelSelect.innerHTML = '<option value="" disabled selected>請選擇機型</option>';
         processSelect.innerHTML = '<option value="" disabled selected>請先選擇機型</option>';
         productionOrderSelect.innerHTML = '<option value="" disabled selected>請先選擇機型</option>';
-        productionQtySelect.innerHTML = '<option value="" disabled selected>請先選擇機型</option>';
+        productionQtySelect.value = '';
         
         modelSelect.disabled = true;
         processSelect.disabled = true;
         productionOrderSelect.disabled = true;
-        productionQtySelect.disabled = true;
 
         if (!selectedCat) return;
 
@@ -254,16 +253,15 @@ function initFormChangeListeners() {
         recalculateEstHours();
     });
 
-    // 2. 機型變更 -> 連動工序、生產製令、生產數量
+    // 2. 機型變更 -> 連動工序、生產製令
     modelSelect.addEventListener('change', () => {
         const selectedModel = modelSelect.value;
         processSelect.innerHTML = '<option value="" disabled selected>請選擇工序</option>';
         productionOrderSelect.innerHTML = '<option value="" disabled selected>請選擇生產製令</option>';
-        productionQtySelect.innerHTML = '<option value="" disabled selected>請選擇生產數量</option>';
+        productionQtySelect.value = '';
         
         processSelect.disabled = true;
         productionOrderSelect.disabled = true;
-        productionQtySelect.disabled = true;
 
         if (!selectedModel) return;
 
@@ -297,22 +295,22 @@ function initFormChangeListeners() {
         });
         productionOrderSelect.disabled = false;
 
-        // C. 篩選生產數量 (來自Model, 對應機型，下拉選單)
-        const filteredQty = [...new Set(
-            globalModelsMeta
-                .filter(item => item.model === selectedModel)
-                .map(item => item.productionQty)
-        )].filter(val => val !== undefined && val !== null && val !== '');
-
-        filteredQty.forEach(qty => {
-            const opt = document.createElement('option');
-            opt.value = qty;
-            opt.textContent = qty;
-            productionQtySelect.appendChild(opt);
-        });
-        productionQtySelect.disabled = false;
-
         recalculateEstHours();
+    });
+
+    // 2.5. 生產製令變更 -> 自動帶出對應的生產數量唯一值
+    productionOrderSelect.addEventListener('change', () => {
+        const selectedPO = productionOrderSelect.value;
+        if (!selectedPO) {
+            productionQtySelect.value = '';
+            return;
+        }
+        const match = globalModelsMeta.find(item => item.productionOrder === selectedPO);
+        if (match) {
+            productionQtySelect.value = match.productionQty || '';
+        } else {
+            productionQtySelect.value = '';
+        }
     });
 
     // 3. 工序變更 -> 重新計算工時
@@ -471,10 +469,15 @@ function initButtonListeners() {
         .then(result => {
             if (result.status === 'success') {
                 showToast(isEdit ? '資料更新成功！' : '派工登錄成功！', 'success');
-                resetForm();
                 
-                // 如果是修改狀態，自動回到查詢頁面，並重新觸發該日期的查詢以檢視最新資料
+                // 如果是修改狀態，重設回新增模式，但保留欄位值，並自動回到查詢頁面
                 if (isEdit) {
+                    document.getElementById('rowIndex').value = '';
+                    document.getElementById('formTitle').textContent = '生產派工登錄';
+                    document.getElementById('formSubTitle').textContent = '填寫每日生產人員之指派工序與排程數量';
+                    document.getElementById('submitBtn').querySelector('.btn-text').textContent = '送出派工紀錄';
+                    document.getElementById('cancelEditBtn').classList.add('hidden');
+
                     const navQuery = document.querySelector('[data-target="dispatchQuerySection"]');
                     if (navQuery) navQuery.click();
                     
@@ -484,6 +487,8 @@ function initButtonListeners() {
                         document.getElementById('queryDate').value = updatedDate;
                         performQuery();
                     }
+                } else {
+                    // 新增模式送出成功後，畫面完全不重置，保留上一筆選擇資訊
                 }
             } else {
                 showToast('儲存失敗：' + (result.error || '未知錯誤'), 'error');
@@ -715,19 +720,7 @@ function enterEditMode(r) {
     productionOrderSelect.disabled = false;
     productionOrderSelect.value = r.productionOrder || '';
 
-    productionQtySelect.innerHTML = '<option value="" disabled>請選擇生產數量</option>';
-    const filteredQty = [...new Set(
-        globalModelsMeta
-            .filter(item => item.model === r.model)
-            .map(item => item.productionQty)
-    )].filter(val => val !== undefined && val !== null && val !== '');
-    filteredQty.forEach(qty => {
-        const opt = document.createElement('option');
-        opt.value = qty;
-        opt.textContent = qty;
-        productionQtySelect.appendChild(opt);
-    });
-    productionQtySelect.disabled = false;
+    // 生產數量直接填入數值
     productionQtySelect.value = r.productionQty || '';
 
     // D. 填充剩餘的手動輸入欄位
@@ -763,8 +756,7 @@ function resetForm() {
     document.getElementById('process').disabled = true;
     document.getElementById('productionOrder').innerHTML = '<option value="" disabled selected>請先選擇機型</option>';
     document.getElementById('productionOrder').disabled = true;
-    document.getElementById('productionQty').innerHTML = '<option value="" disabled selected>請先選擇機型</option>';
-    document.getElementById('productionQty').disabled = true;
+    document.getElementById('productionQty').value = '';
 
     // 恢復 UI 到新增狀態
     document.getElementById('formTitle').textContent = '生產派工登錄';
