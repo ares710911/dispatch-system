@@ -220,18 +220,25 @@ function initFormChangeListeners() {
     const productionOrderSelect = document.getElementById('productionOrder');
     const productionQtySelect = document.getElementById('productionQty');
     const estQtyInput = document.getElementById('estQty');
+    const categorySelect = document.getElementById('category');
+
+    // 0. 類別變更 -> 決定生產製令是否可選與連動
+    categorySelect.addEventListener('change', () => {
+        updateProductionOrderVisibility();
+    });
 
     // 1. 機型類別變更 -> 連動機型
     modelCategorySelect.addEventListener('change', () => {
         const selectedCat = modelCategorySelect.value;
         modelSelect.innerHTML = '<option value="" disabled selected>請選擇機型</option>';
         processSelect.innerHTML = '<option value="" disabled selected>請先選擇機型</option>';
-        productionOrderSelect.innerHTML = '<option value="" disabled selected>請先選擇機型</option>';
         productionQtySelect.value = '';
         
         modelSelect.disabled = true;
         processSelect.disabled = true;
-        productionOrderSelect.disabled = true;
+        
+        // 觸發連動可見度更新
+        updateProductionOrderVisibility();
 
         if (!selectedCat) return;
 
@@ -257,13 +264,14 @@ function initFormChangeListeners() {
     modelSelect.addEventListener('change', () => {
         const selectedModel = modelSelect.value;
         processSelect.innerHTML = '<option value="" disabled selected>請選擇工序</option>';
-        productionOrderSelect.innerHTML = '<option value="" disabled selected>請選擇生產製令</option>';
-        productionQtySelect.value = '';
-        
         processSelect.disabled = true;
-        productionOrderSelect.disabled = true;
+        productionQtySelect.value = '';
 
-        if (!selectedModel) return;
+        if (!selectedModel) {
+            updateProductionOrderVisibility();
+            recalculateEstHours();
+            return;
+        }
 
         // A. 篩選工序 (來自工序Data, 對應機型)
         const filteredProcesses = [...new Set(
@@ -280,20 +288,8 @@ function initFormChangeListeners() {
         });
         processSelect.disabled = false;
 
-        // B. 篩選生產製令 (來自Model, 對應機型)
-        const filteredOrders = [...new Set(
-            globalModelsMeta
-                .filter(item => item.model === selectedModel)
-                .map(item => item.productionOrder)
-        )].filter(Boolean);
-
-        filteredOrders.sort().forEach(po => {
-            const opt = document.createElement('option');
-            opt.value = po;
-            opt.textContent = po;
-            productionOrderSelect.appendChild(opt);
-        });
-        productionOrderSelect.disabled = false;
+        // B. 連動生產製令
+        updateProductionOrderVisibility();
 
         recalculateEstHours();
     });
@@ -423,6 +419,58 @@ function recalculateDuration() {
 
     const netMinutes = (endMins - startMins) - totalOverlap;
     durationInput.value = Math.max(0, netMinutes) + ' 分鐘';
+}
+
+/**
+ * 控制生產製令 dropdown 是否可見與是否為必選
+ */
+function updateProductionOrderVisibility() {
+    const categorySelect = document.getElementById('category');
+    const modelSelect = document.getElementById('model');
+    const productionOrderSelect = document.getElementById('productionOrder');
+    const productionQtySelect = document.getElementById('productionQty');
+
+    const selectedCategory = categorySelect.value;
+    const selectedModel = modelSelect.value;
+
+    if (selectedCategory === '生產製令') {
+        productionOrderSelect.required = true;
+        
+        if (selectedModel) {
+            // 備份當前選定的製令值
+            const currentSelectedPO = productionOrderSelect.value;
+            productionOrderSelect.innerHTML = '<option value="" disabled selected>請選擇生產製令</option>';
+            
+            const filteredOrders = [...new Set(
+                globalModelsMeta
+                    .filter(item => item.model === selectedModel)
+                    .map(item => item.productionOrder)
+            )].filter(Boolean);
+
+            filteredOrders.sort().forEach(po => {
+                const opt = document.createElement('option');
+                opt.value = po;
+                opt.textContent = po;
+                productionOrderSelect.appendChild(opt);
+            });
+            productionOrderSelect.disabled = false;
+            
+            // 如果原本選的製令還在可選範圍內，則還原選取值
+            if (currentSelectedPO && filteredOrders.includes(currentSelectedPO)) {
+                productionOrderSelect.value = currentSelectedPO;
+            }
+        } else {
+            productionOrderSelect.innerHTML = '<option value="" disabled selected>請先選擇機型</option>';
+            productionOrderSelect.disabled = true;
+            productionQtySelect.value = '';
+        }
+    } else {
+        // 如果類別非「生產製令」，則清空並禁用生產製令下拉選單，且不設為必填
+        productionOrderSelect.required = false;
+        productionOrderSelect.innerHTML = '<option value="" disabled selected>無須選取生產製令</option>';
+        productionOrderSelect.disabled = true;
+        productionQtySelect.value = '';
+    }
 }
 
 /**
@@ -705,22 +753,9 @@ function enterEditMode(r) {
     processSelect.disabled = false;
     processSelect.value = r.process || '';
 
-    productionOrderSelect.innerHTML = '<option value="" disabled>請選擇生產製令</option>';
-    const filteredOrders = [...new Set(
-        globalModelsMeta
-            .filter(item => item.model === r.model)
-            .map(item => item.productionOrder)
-    )].filter(Boolean);
-    filteredOrders.sort().forEach(po => {
-        const opt = document.createElement('option');
-        opt.value = po;
-        opt.textContent = po;
-        productionOrderSelect.appendChild(opt);
-    });
-    productionOrderSelect.disabled = false;
+    // D. 連動並加載生產製令
+    updateProductionOrderVisibility();
     productionOrderSelect.value = r.productionOrder || '';
-
-    // 生產數量直接填入數值
     productionQtySelect.value = r.productionQty || '';
 
     // D. 填充剩餘的手動輸入欄位
@@ -754,9 +789,8 @@ function resetForm() {
     document.getElementById('model').disabled = true;
     document.getElementById('process').innerHTML = '<option value="" disabled selected>請先選擇機型</option>';
     document.getElementById('process').disabled = true;
-    document.getElementById('productionOrder').innerHTML = '<option value="" disabled selected>請先選擇機型</option>';
-    document.getElementById('productionOrder').disabled = true;
-    document.getElementById('productionQty').value = '';
+    // 更新生產製令的連動與必填狀態
+    updateProductionOrderVisibility();
 
     // 恢復 UI 到新增狀態
     document.getElementById('formTitle').textContent = '生產派工登錄';
