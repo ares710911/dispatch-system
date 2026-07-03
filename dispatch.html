@@ -55,7 +55,7 @@
                 </div>
 
                 <div class="card">
-                    <form id="dispatchForm">
+                    <form id="dispatchForm" novalidate>
                         <!-- Hidden RowIndex for Editing -->
                         <input type="hidden" id="rowIndex" name="rowIndex">
 
@@ -109,7 +109,7 @@
                             <!-- 生產製令 (Model B欄, 對應機型) -->
                             <div class="form-group">
                                 <label for="productionOrder">生產製令</label>
-                                <select id="productionOrder" name="productionOrder" required disabled>
+                                <select id="productionOrder" name="productionOrder" disabled>
                                     <option value="" disabled selected>請先選擇機型</option>
                                 </select>
                             </div>

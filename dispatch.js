@@ -493,6 +493,41 @@ function initButtonListeners() {
             return;
         }
 
+        // 1. 自訂欄位驗證
+        const date = document.getElementById('date').value;
+        const personnel = document.getElementById('personnel').value;
+        const category = document.getElementById('category').value;
+        const modelCategory = document.getElementById('modelCategory').value;
+        const model = document.getElementById('model').value;
+        const process = document.getElementById('process').value;
+        const startTime = document.getElementById('startTime').value;
+        const endTime = document.getElementById('endTime').value;
+        const estQty = parseFloat(document.getElementById('estQty').value) || 0;
+
+        if (!date || !personnel || !category || !modelCategory || !model || !process || !startTime || !endTime) {
+            showToast('請確實填寫所有基本資訊與時間！', 'error');
+            return;
+        }
+
+        if (estQty <= 0) {
+            showToast('預計數量必須大於 0！', 'error');
+            return;
+        }
+
+        // 只有當類別為「生產製令」時，才要求檢查生產製令與數量
+        if (category === '生產製令') {
+            const productionOrder = document.getElementById('productionOrder').value;
+            const productionQty = document.getElementById('productionQty').value;
+            if (!productionOrder) {
+                showToast('當類別為「生產製令」時，必須選取生產製令！', 'error');
+                return;
+            }
+            if (!productionQty) {
+                showToast('無法自動帶出該製令的生產數量，請檢查 Model 資料設定！', 'error');
+                return;
+            }
+        }
+
         // 收集表單資料
         const formData = new FormData(form);
         const params = new URLSearchParams();
