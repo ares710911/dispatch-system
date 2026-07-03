@@ -509,10 +509,7 @@ function initButtonListeners() {
             return;
         }
 
-        if (estQty <= 0) {
-            showToast('預計數量必須大於 0！', 'error');
-            return;
-        }
+
 
         // 只有當類別為「生產製令」時，才要求檢查生產製令與數量
         if (category === '生產製令') {
